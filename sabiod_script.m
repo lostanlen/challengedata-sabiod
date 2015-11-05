@@ -4,10 +4,10 @@ train_bytes = [train_files.bytes];
 train_files = train_files(train_bytes~=0);
 train_filenames = {train_files.name};
 nTrain_files = length(train_files);
-for test_file_index = 1:nTrain_files
-    filename = train_filenames{test_file_index};
+for train_file_index = 1:nTrain_files
+    filename = train_filenames{train_file_index};
     filepath_in = ['TRAIN/', filename];
-    filepath_out = ['TRAIN/', 'ID', num2str(test_file_index, '%0.4d'), '.wav'];
+    filepath_out = ['TRAIN/', 'ID', num2str(train_file_index, '%0.4d'), '.wav'];
     movefile(filepath_in, filepath_out)
 end
 
