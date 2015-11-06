@@ -1,0 +1,95 @@
+%% TRAINING SET
+% List WAV files
+train_prefix = 'BIRD50_TRAIN_LifeClefSABIOD2015_';
+extension = '.wav';
+train_files = dir('TRAIN');
+mkdir('TRAIN_out')
+% Remove zero-byte files
+train_bytes = [train_files.bytes];
+train_files = train_files(train_bytes~=0);
+% Load CSV lines
+train_fid = fopen('SABIOD_LIFECLEF_UTLN_BIRD50_output_training.csv');
+train_csv_cells = textscan(train_fid, '%s%s', 'delimiter',',');
+train_csv_cells = [train_csv_cells{:}];
+fclose(train_fid);
+% Check that there are as many CSV lines as WAV files
+nCSV_lines = size(train_csv_cells, 1);
+nTrain_WAV_files = length(train_files);
+assert(nTrain_WAV_files == nCSV_lines);
+nTrain_files = nTrain_WAV_files;
+% Sort CSV lines in training set by class
+train_str_classes = train_csv_cells(:,2);
+train_classes = 1 + cellfun(@str2double, train_str_classes);
+[train_sorted_classes, train_sorting_indices] = sort(train_classes);
+train_sorted_uuids = train_csv_cells(train_sorting_indices, 1);
+% Initialize new CSV file
+train_csv_lines = cell(1, nTrain_files);
+line_break = char(10);
+for train_file_index = 1:nTrain_files
+    % Get UUID
+    train_uuid = train_sorted_uuids{train_file_index};
+    % Generate ID
+    train_id = num2str(train_file_index, '%0.4d');
+    % Rename WAV file
+    train_filepath_in = ['TRAIN/', train_prefix, train_uuid, extension];
+    train_filepath_out = ['TRAIN_out/', 'ID', train_id, extension];
+    movefile(train_filepath_in, train_filepath_out);
+    % Generate CSV line
+    train_str_class = num2str(train_sorted_classes(train_file_index), '%0.2d');
+    train_csv_line = ['ID', train_id, ',', train_str_class, line_break];
+    train_csv_lines{train_file_index} = train_csv_line;
+end
+% Write to CSV
+train_fid = fopen('train.csv','w');
+fprintf(train_fid, '%s', train_csv_lines{:});
+fclose(train_fid);
+
+
+%% TEST SET
+% List WAV files
+test_prefix = 'BIRD50_TESTdev_LifeClefSABIOD2015_';
+test_files = dir('TEST');
+mkdir('TEST_out')
+% Remove zero-byte files
+test_bytes = [test_files.bytes];
+test_files = test_files(test_bytes~=0);
+% Load CSV lines
+test_fid = fopen('SABIOD_LIFECLEF_UTLN_BIRD50v2_output_testing.csv');
+test_csv_cells = textscan(test_fid, '%s%s', 'delimiter',',');
+test_csv_cells = [test_csv_cells{:}];
+fclose(test_fid);
+% Check that there are as many CSV lines as WAV files
+nCSV_lines = size(test_csv_cells, 1);
+nTest_WAV_files = length(test_files);
+assert(nTest_WAV_files == nCSV_lines);
+nTest_files = nTest_WAV_files;
+% Get UUIDs
+test_uuids = test_csv_cells(:,1);
+% Increment all classes and prepend a zero if the class number is single-digit
+test_str_classes_in = test_csv_cells(:,2);
+test_classes_in = cellfun(@str2double, test_str_classes_in);
+test_classes_out = test_classes_in + 1;
+test_str_classes_out = arrayfun(@(x) num2str(x, '%0.2d'), ...
+    test_classes_out, 'UniformOutput', false);
+% Initialize new CSV file
+test_csv_lines = cell(1, nTest_files);
+line_break = char(10);
+for test_file_index = 1:nTest_files
+    % Get UUID
+    test_uuid = test_uuids{test_file_index};
+    % Generate ID
+    % We add 1000 in order to avoid collision w.r.t. training set IDs
+    test_id = num2str(1000 + test_file_index, '%0.4d');
+    % Rename WAV file
+    test_filepath_in = ['TEST/', test_prefix, test_uuid, extension];
+    test_filepath_out = ['TEST_out/', 'ID', test_id, extension];
+    movefile(test_filepath_in, test_filepath_out);
+    % Generate CSV line
+    test_str_class = test_str_classes_out{test_file_index};
+    test_csv_line = ['ID', test_id, ',', test_str_class, line_break];
+    test_csv_lines{test_file_index} = test_csv_line;
+end
+% Write to CSV
+test_fid = fopen('test.csv','w');
+fprintf(test_fid, '%s', test_csv_lines{:});
+fclose(test_fid);
